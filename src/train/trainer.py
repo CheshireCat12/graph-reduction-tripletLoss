@@ -95,7 +95,7 @@ def optimize(model,
     print(f'Best val acc: {stats[seed]["best_val_acc"]:.2f}')
     print(f'Best test acc: {stats[seed]["best_test_acc"]:.2f}')
 
-def start_training(args, seeds, dataset_):
+def start_training(args, dataset_, seeds):
     # Load Dataset
     # dataset_ = TUDataset(root=args.folder_data,
     #                      name=args.dataset)

@@ -1,0 +1,12 @@
+numpy
+scipy
+torch
+torch-scatter
+torch-sparse
+torch-geometric
+torch-cluster
+torch-spline-conv
+jupyterlab
+requests
+pyparsing
+networkx

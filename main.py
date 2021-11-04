@@ -1,0 +1,61 @@
+##########
+# Import #
+##########
+from argparse import ArgumentParser
+
+import numpy as np
+from torch_geometric import seed_everything
+from torch_geometric.datasets import TUDataset
+
+from src.train.trainer import start_training
+from src.graph_converter import start_converting
+
+def main(args):
+    dataset_ = TUDataset(root=args.folder_data,
+                         name=args.dataset)
+
+    seed_everything(43)
+    seeds = np.random.randint(2000, size=args.num_seeds)
+
+    start_training(args, dataset_, seeds)
+
+    start_converting(args, dataset_, seeds)
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='Train GNN')
+
+    # Parameters of the experiment
+    parser.add_argument('--train',
+                        action='store_true',
+                        help='Choose the experiment to run.')
+
+    parser.add_argument('--num-epochs',
+                        required=True, type=int,
+                        help='Number of epochs')
+    parser.add_argument('--percentage-train',
+                        required=True, type=int,
+                        help='Percentage of data used in the training set.\n'
+                             'The remaining data are split in 2 equivalent size set.')
+    parser.add_argument('--dataset',
+                        required=True, type=str,
+                        help='Name of the dataset')
+    parser.add_argument('--num-seeds',
+                        required=True, type=int,
+                        help='Number of seeds to generate.')
+    parser.add_argument('--specific-seed',
+                        type=int, default=False,
+                        help='Train GNN with specific seed.')
+
+    parser.add_argument('--folder-data',
+                        required=True, type=str,
+                        help='Folder where to save the graph datasets.')
+    parser.add_argument('--folder-results',
+                        required=True, type=str,
+                        help='Folder where to save the stats, the trained models, the reduced graphs')
+    parser.add_argument('--name-experiment', type=str, required=True,
+                        help='Specify the experiment name under which to save the experiment')
+
+    args = parser.parse_args()
+
+    main(args)

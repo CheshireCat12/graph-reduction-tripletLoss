@@ -32,10 +32,12 @@ import json
 def train(model: torch.nn.Module,
           train_loader: torch_geometric.data.DataLoader,
           optimizer,
-          criterion) -> None:
+          criterion,
+          device) -> None:
     model.train()
 
     for data in train_loader:  # Iterate in batches over the training dataset.
+        data = data.to(device)
         out, *_ = model(data.x, data.edge_index, data.batch)  # Perform a single forward pass.
         loss = criterion(out, data.y)  # Compute the loss.
         loss.backward()  # Derive gradients.
@@ -44,22 +46,26 @@ def train(model: torch.nn.Module,
 
 
 def test(model: torch.nn.Module,
-         test_loader: torch_geometric.data.DataLoader) -> float:
+         test_loader: torch_geometric.data.DataLoader,
+         device) -> float:
     model.eval()
 
     correct = 0
     for data in test_loader:  # Iterate in batches over the training/test dataset.
+        data = data.to(device)
         out, *_ = model(data.x, data.edge_index, data.batch)  
         pred = out.argmax(dim=1)  # Use the class with highest probability.
         correct += int((pred == data.y).sum())  # Check against ground-truth labels.
     return correct / len(test_loader.dataset)  # Derive ratio of correct predictions.
 
 
-def save_model(model: torch.nn.Module, folder: str, filename: str) -> None:
+def save_model(model: torch.nn.Module, folder: str, filename: str, device) -> None:
     model.eval()
+    model.to('cpu')
     Path(folder).mkdir(parents=True, exist_ok=True)
     filename = join(folder, filename)
     torch.save(model.state_dict(), filename)
+    model.to(device)
 
 
 def optimize(model,
@@ -70,6 +76,7 @@ def optimize(model,
              num_epochs: int,
              seed: int,
              stats: dict,
+             device,
              args) -> None:
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -80,25 +87,26 @@ def optimize(model,
     stats[seed]['best_test_acc'] = float('-inf')
 
     for epoch in tqdm(range(num_epochs)):
-        train(model, train_loader, optimizer, criterion)
+        train(model, train_loader, optimizer, criterion, device)
 
-        stats[seed]['train_acc'].append(test(model, train_loader))
-        stats[seed]['val_acc'].append(test(model, val_loader))
+        stats[seed]['train_acc'].append(test(model, train_loader, device))
+        stats[seed]['val_acc'].append(test(model, val_loader, device))
 
         if stats[seed]['val_acc'][epoch] > stats[seed]['best_val_acc']:
             stats[seed]['best_val_acc'] = stats[seed]['val_acc'][epoch]
-            stats[seed]['best_test_acc'] = test(model, test_loader)
+            stats[seed]['best_test_acc'] = test(model, test_loader, device)
 
             folder, filename = join(args.folder_results, 'trained_models/'), f'trained_gnn_{seed}.pt'
-            save_model(model, folder, filename)
+            save_model(model, folder, filename, device)
 
     print(f'Best val acc: {stats[seed]["best_val_acc"]:.2f}')
     print(f'Best test acc: {stats[seed]["best_test_acc"]:.2f}')
 
 def start_training(args, dataset_, seeds):
     # Load Dataset
-    # dataset_ = TUDataset(root=args.folder_data,
-    #                      name=args.dataset)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     dataset_size = len(dataset_)
 
     perc_train = args.percentage_train / 100
@@ -134,6 +142,8 @@ def start_training(args, dataset_, seeds):
                           out_channels=dataset.num_classes,
                           depth=1)
 
+        model.to(device)
+
         stats[int(seed)] = {}
 
         optimize(model,
@@ -144,6 +154,7 @@ def start_training(args, dataset_, seeds):
                  num_epochs=args.num_epochs,
                  seed=seed,
                  stats=stats,
+                 device=device,
                  args=args)
 
         with open(join(args.folder_results, f'stats_gnn_training.json'), 'w') as f:

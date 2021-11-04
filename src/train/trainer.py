@@ -143,7 +143,8 @@ def start_training(args, dataset_, seeds):
                  criterion=criterion,
                  num_epochs=args.num_epochs,
                  seed=seed,
-                 stats=stats)
+                 stats=stats,
+                 args=args)
 
         with open(join(args.folder_results, f'stats_gnn_training.json'), 'w') as f:
             json.dump(stats, f, indent=4)

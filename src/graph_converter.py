@@ -10,7 +10,8 @@ import torch
 import torch_geometric
 from networkx.readwrite.graphml import write_graphml_lxml
 from torch_geometric import seed_everything
-from torch_geometric.data import Data, DataLoader
+from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
 import torch_geometric.utils as tg_utils
 
 

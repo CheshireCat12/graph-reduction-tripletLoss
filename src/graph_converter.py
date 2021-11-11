@@ -155,9 +155,9 @@ def start_converting(args, dataset_, seeds):
 
         trained_model = GraphUNet(in_channels=dataset.num_node_features,
                                   hidden_channels=64,
-                                  dim_gr_embedding=32,
+                                  dim_gr_embedding=args.dim_gr_embedding,
                                   out_channels=dataset.num_classes,
-                                  depth=1)
+                                  depth=args.depth)
         trained_model.load_state_dict(torch.load(join(args.folder_results, f'trained_models/trained_gnn_{seed}.pt')))
         trained_model.eval()
 

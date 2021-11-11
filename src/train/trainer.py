@@ -79,7 +79,8 @@ def optimize(model,
              device,
              args) -> None:
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                                 lr=0.01)
 
     stats[seed]['train_acc'] = []
     stats[seed]['val_acc'] = []
@@ -101,6 +102,9 @@ def optimize(model,
 
     print(f'Best val acc: {stats[seed]["best_val_acc"]:.2f}')
     print(f'Best test acc: {stats[seed]["best_test_acc"]:.2f}')
+
+    with open(join(args.folder_results, f'stats_gnn_training.json'), 'w') as f:
+        json.dump(stats, f, indent=4)
 
 def start_training(args, dataset_, seeds):
     # Load Dataset
@@ -136,11 +140,15 @@ def start_training(args, dataset_, seeds):
         val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
         test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
+        depth = 1 if args.augment_depth_by_step else args.depth
+
         model = GraphUNet(in_channels=dataset.num_node_features,
                           hidden_channels=64,
-                          dim_gr_embedding=32,
+                          dim_gr_embedding=args.dim_gr_embedding,
                           out_channels=dataset.num_classes,
-                          depth=1)
+                          depth=depth)
+
+        print(model)
 
         model.to(device)
 
@@ -157,5 +165,23 @@ def start_training(args, dataset_, seeds):
                  device=device,
                  args=args)
 
-        with open(join(args.folder_results, f'stats_gnn_training.json'), 'w') as f:
-            json.dump(stats, f, indent=4)
+        for depth_step in range(args.depth - depth):
+
+            if args.freeze_parameters:
+                model.down_convs.requires_grad_(False)
+                model.pools.requires_grad_(False)
+
+            model.augment_depth(pool_ratio=0.5)
+
+            optimize(model,
+                     train_loader=train_loader,
+                     val_loader=val_loader,
+                     test_loader=test_loader,
+                     criterion=criterion,
+                     num_epochs=args.num_epochs//2,
+                     seed=seed,
+                     stats=stats,
+                     device=device,
+                     args=args)
+
+

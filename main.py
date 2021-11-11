@@ -17,7 +17,8 @@ def main(args):
     seed_everything(43)
     seeds = np.random.randint(2000, size=args.num_seeds)
 
-    start_training(args, dataset_, seeds)
+    if args.train:
+        start_training(args, dataset_, seeds)
 
     start_converting(args, dataset_, seeds)
 
@@ -46,6 +47,22 @@ if __name__ == '__main__':
     parser.add_argument('--specific-seed',
                         type=int, default=False,
                         help='Train GNN with specific seed.')
+
+    parser.add_argument('--dim-gr-embedding',
+                        required=True, type=int,
+                        help='Give the vector size of the node features of the reduced graphs')
+
+
+    parser.add_argument('--depth',
+                        required=True, type=int,
+                        help='Depth of the model, defines the size of reduced graphs')
+    parser.add_argument('--augment-depth-by-step',
+                        action='store_true',
+                        help='Defines if the depth is settled once at the beginning or'
+                             'if the model is trained multiple times with increasing depth')
+    parser.add_argument('--freeze-parameters',
+                        action='store_true',
+                        help='Freeze the trained parameters before increasing the depth')
 
     parser.add_argument('--folder-data',
                         required=True, type=str,

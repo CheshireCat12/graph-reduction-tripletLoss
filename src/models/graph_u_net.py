@@ -48,6 +48,7 @@ class GraphUNet(torch.nn.Module):
 
         self.down_convs = torch.nn.ModuleList()
         self.pools = torch.nn.ModuleList()
+
         self.down_convs.append(GCNConv(in_channels,
                                        channels,
                                        improved=True))
@@ -71,6 +72,14 @@ class GraphUNet(torch.nn.Module):
             conv.reset_parameters()
         for pool in self.pools:
             pool.reset_parameters()
+
+    def augment_depth(self, pool_ratio=0.5):
+        self.pools.append(TopKPooling(in_channels=self.hidden_channels,
+                                      ratio=pool_ratio))
+        self.down_convs.append(GCNConv(self.hidden_channels,
+                                       self.hidden_channels,
+                                       improved=True))
+
 
     def forward(self, x, edge_index, batch=None):
         """"""
@@ -129,7 +138,7 @@ class GraphUNet(torch.nn.Module):
                                                     edge_weight)
         return edge_index, edge_weight
 
-    def __repr__(self):
-        return '{}({}, {}, {}, depth={}, pool_ratios={})'.format(
-            self.__class__.__name__, self.in_channels, self.hidden_channels,
-            self.out_channels, self.depth, self.pool_ratios)
+    # def __repr__(self):
+    #     return '{}({}, {}, {}, depth={}, pool_ratios={})'.format(
+    #         self.__class__.__name__, self.in_channels, self.hidden_channels,
+    #         self.out_channels, self.depth, self.pool_ratios)

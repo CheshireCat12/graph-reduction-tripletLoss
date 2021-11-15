@@ -154,7 +154,7 @@ def start_converting(args, dataset_, seeds):
         convert_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
         trained_model = GraphUNet(in_channels=dataset.num_node_features,
-                                  hidden_channels=64,
+                                  hidden_channels=args.dim_hidden_vec,
                                   dim_gr_embedding=args.dim_gr_embedding,
                                   out_channels=dataset.num_classes,
                                   depth=args.depth)

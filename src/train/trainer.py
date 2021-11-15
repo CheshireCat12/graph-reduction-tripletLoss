@@ -143,7 +143,7 @@ def start_training(args, dataset_, seeds):
         depth = 1 if args.augment_depth_by_step else args.depth
 
         model = GraphUNet(in_channels=dataset.num_node_features,
-                          hidden_channels=64,
+                          hidden_channels=args.dim_hidden_vec,
                           dim_gr_embedding=args.dim_gr_embedding,
                           out_channels=dataset.num_classes,
                           depth=depth)

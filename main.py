@@ -1,7 +1,7 @@
 ##########
 # Import #
 ##########
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 
 import numpy as np
 from torch_geometric import seed_everything
@@ -48,6 +48,10 @@ if __name__ == '__main__':
                         type=int, default=False,
                         help='Train GNN with specific seed.')
 
+
+    parser.add_argument('--dim-hidden-vec',
+                        required=True, type=int,
+                        help='Give the dimension of hidden vector dim')
     parser.add_argument('--dim-gr-embedding',
                         required=True, type=int,
                         help='Give the vector size of the node features of the reduced graphs')
@@ -65,14 +69,23 @@ if __name__ == '__main__':
                         help='Freeze the trained parameters before increasing the depth')
 
     parser.add_argument('--folder-data',
-                        required=True, type=str,
+                        type=str,
                         help='Folder where to save the graph datasets.')
     parser.add_argument('--folder-results',
-                        required=True, type=str,
+                        type=str,
                         help='Folder where to save the stats, the trained models, the reduced graphs')
     parser.add_argument('--name-experiment', type=str, required=True,
                         help='Specify the experiment name under which to save the experiment')
 
     args = parser.parse_args()
 
+    if not args.folder_data:
+        args.folder_data = f'./data/{args.dataset}/'
+    if not args.folder_results:
+        args.folder_results = f'./results/{args.dataset}/{args.name_experiment}/'
+
+    # Merge the command line parameters with the constant parameters
+    # arguments = Namespace(**vars(args),
+    #                       **{'folder_data': folder_data,
+    #                          'folder_results': folder_results})
     main(args)

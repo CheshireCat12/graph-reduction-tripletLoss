@@ -9,6 +9,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="graph-matching-gnn-reduction" />
     <orderEntry type="module" module-name="gr_augmentation" />
+    <orderEntry type="module" module-name="graph_project" />
+    <orderEntry type="module" module-name="graph-matching-core" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="renderExternalDocumentation" value="true" />

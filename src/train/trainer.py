@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from torch_geometric import seed_everything
 from src.models.graph_u_net import GraphUNet
+from src.models.graph_u_net_complete import GraphUNet as GraphUNetComplete
 import networkx as nx
 import numpy as np
 import shutil
@@ -27,13 +28,16 @@ from torch_geometric.datasets import TUDataset
 from torch_geometric.loader import DataLoader
 from typing import List, Tuple
 import json
+from torch.utils.tensorboard import SummaryWriter
 
 
 def train(model: torch.nn.Module,
           train_loader: torch_geometric.data.DataLoader,
           optimizer,
           criterion,
-          device) -> None:
+          device,
+          writer,
+          counter) -> None:
     model.train()
 
     for data in train_loader:  # Iterate in batches over the training dataset.
@@ -43,6 +47,9 @@ def train(model: torch.nn.Module,
         loss.backward()  # Derive gradients.
         optimizer.step()  # Update parameters based on gradients.
         optimizer.zero_grad()  # Clear gradients.
+
+        writer.add_scalar('Loss/train', loss.item(), counter[0])
+        counter[0] += 1
 
 
 def test(model: torch.nn.Module,
@@ -79,8 +86,11 @@ def optimize(model,
              device,
              args) -> None:
 
+    writer = SummaryWriter()
+    counter = [0]
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                 lr=0.01)
+                                 lr=0.001,
+                                 weight_decay=0.008)
 
     stats[seed]['train_acc'] = []
     stats[seed]['val_acc'] = []
@@ -88,10 +98,15 @@ def optimize(model,
     stats[seed]['best_test_acc'] = float('-inf')
 
     for epoch in tqdm(range(num_epochs)):
-        train(model, train_loader, optimizer, criterion, device)
+        train(model, train_loader, optimizer, criterion, device, writer, counter)
+        train_acc = test(model, train_loader, device)
+        val_acc = test(model, val_loader, device)
 
-        stats[seed]['train_acc'].append(test(model, train_loader, device))
-        stats[seed]['val_acc'].append(test(model, val_loader, device))
+        writer.add_scalar('Accuracy/train', train_acc, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
+
+        stats[seed]['train_acc'].append(train_acc)
+        stats[seed]['val_acc'].append(val_acc)
 
         if stats[seed]['val_acc'][epoch] > stats[seed]['best_val_acc']:
             stats[seed]['best_val_acc'] = stats[seed]['val_acc'][epoch]
@@ -105,6 +120,32 @@ def optimize(model,
 
     with open(join(args.folder_results, f'stats_gnn_training.json'), 'w') as f:
         json.dump(stats, f, indent=4)
+
+from torch_geometric.nn.conv import GATConv, GCNConv, GATv2Conv, GraphConv
+CONV_LAYERS = {
+    'GCNConv': GCNConv,
+    'GATConv': GATConv,
+    'GATv2Conv': GATv2Conv,
+    'GraphConv': GraphConv,
+}
+
+def init_model(args, in_channels, out_channels, depth):
+    if args.name_model == 'UNet':
+        return GraphUNet(in_channels=in_channels,
+                         hidden_channels=args.dim_hidden_vec,
+                         dim_gr_embedding=args.dim_gr_embedding,
+                         out_channels=out_channels,
+                         depth=depth,
+                         layer=CONV_LAYERS[args.layer]
+                         )
+
+    elif args.name_model == 'UNet_complete':
+        return GraphUNetComplete(in_channels=in_channels,
+                                 hidden_channels=args.dim_hidden_vec,
+                                 dim_gr_embedding=args.dim_gr_embedding,
+                                 out_channels=out_channels,
+                                 depth=depth)
+
 
 def start_training(args, dataset_, seeds):
     # Load Dataset
@@ -142,11 +183,10 @@ def start_training(args, dataset_, seeds):
 
         depth = 1 if args.augment_depth_by_step else args.depth
 
-        model = GraphUNet(in_channels=dataset.num_node_features,
-                          hidden_channels=args.dim_hidden_vec,
-                          dim_gr_embedding=args.dim_gr_embedding,
-                          out_channels=dataset.num_classes,
-                          depth=depth)
+        model = init_model(args,
+                           in_channels=dataset.num_node_features,
+                           out_channels=dataset.num_classes,
+                           depth=depth)
 
         print(model)
 
@@ -183,5 +223,3 @@ def start_training(args, dataset_, seeds):
                      stats=stats,
                      device=device,
                      args=args)
-
-

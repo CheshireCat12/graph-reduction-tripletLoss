@@ -135,6 +135,9 @@ def save_classes(graph_classes: defaultdict, folder: str) -> None:
         parse_class_to_xml(name_set, idx_classes, folder)
 
 from src.models.graph_u_net import GraphUNet
+from src.models.graph_u_net_complete import GraphUNet as GraphUNetComplete
+from src.train.trainer import init_model
+
 
 def start_converting(args, dataset_, seeds):
 
@@ -153,11 +156,10 @@ def start_converting(args, dataset_, seeds):
         dataset = dataset.shuffle()
         convert_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
-        trained_model = GraphUNet(in_channels=dataset.num_node_features,
-                                  hidden_channels=args.dim_hidden_vec,
-                                  dim_gr_embedding=args.dim_gr_embedding,
-                                  out_channels=dataset.num_classes,
-                                  depth=args.depth)
+        trained_model = init_model(args,
+                                   in_channels=dataset.num_node_features,
+                                   out_channels=dataset.num_classes,
+                                   depth=args.depth)
         trained_model.load_state_dict(torch.load(join(args.folder_results, f'trained_models/trained_gnn_{seed}.pt')))
         trained_model.eval()
 

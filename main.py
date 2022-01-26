@@ -31,16 +31,20 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Choose the experiment to run.')
 
+    parser.add_argument('--name-model',
+                        default='Unet',
+                        type=str,
+                        help='Name of the GNN model.')
     parser.add_argument('--num-epochs',
                         required=True, type=int,
                         help='Number of epochs')
+    parser.add_argument('--dataset',
+                        required=True, type=str,
+                        help='Name of the dataset')
     parser.add_argument('--percentage-train',
                         required=True, type=int,
                         help='Percentage of data used in the training set.\n'
                              'The remaining data are split in 2 equivalent size set.')
-    parser.add_argument('--dataset',
-                        required=True, type=str,
-                        help='Name of the dataset')
     parser.add_argument('--num-seeds',
                         required=True, type=int,
                         help='Number of seeds to generate.')
@@ -67,6 +71,10 @@ if __name__ == '__main__':
     parser.add_argument('--freeze-parameters',
                         action='store_true',
                         help='Freeze the trained parameters before increasing the depth')
+    parser.add_argument('--layer',
+                        default='GCNConv',
+                        type=str,
+                        help='Specifies the type of layer to use')
 
     parser.add_argument('--folder-data',
                         type=str,
@@ -84,8 +92,4 @@ if __name__ == '__main__':
     if not args.folder_results:
         args.folder_results = f'./results/{args.dataset}/{args.name_experiment}/'
 
-    # Merge the command line parameters with the constant parameters
-    # arguments = Namespace(**vars(args),
-    #                       **{'folder_data': folder_data,
-    #                          'folder_results': folder_results})
     main(args)

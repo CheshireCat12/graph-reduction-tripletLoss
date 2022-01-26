@@ -6,3 +6,4 @@ jupyterlab
 requests
 pyparsing
 networkx
+tensorboard

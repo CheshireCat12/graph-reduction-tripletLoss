@@ -53,8 +53,13 @@ class GraphUNet(torch.nn.Module):
 
         self.down_convs.append(self.layer(in_channels,
                                           channels))
+        self.down_convs.append(self.layer(channels,
+                                          channels))
+
         for i in range(depth):
             self.pools.append(TopKPooling(channels, self.pool_ratios[i]))
+            self.down_convs.append(self.layer(channels,
+                                              channels))
             self.down_convs.append(self.layer(channels,
                                               channels))
 
@@ -87,6 +92,7 @@ class GraphUNet(torch.nn.Module):
             batch = edge_index.new_zeros(x.size(0))
         edge_weight = x.new_ones(edge_index.size(1))
         x = self.down_convs[0](x, edge_index, edge_weight)
+        x = self.down_convs[1](x, edge_index, edge_weight)
         x = self.act(x)
 
         xs = [x]
@@ -101,7 +107,9 @@ class GraphUNet(torch.nn.Module):
             x, edge_index, edge_weight, batch, perm, _ = self.pools[i - 1](
                 x, edge_index, edge_weight, batch)
 
-            x = self.down_convs[i](x, edge_index, edge_weight)
+            idx_layer = i * 2
+            x = self.down_convs[idx_layer](x, edge_index, edge_weight)
+            x = self.down_convs[idx_layer+1](x, edge_index, edge_weight)
             x = self.act(x)
 
             if i < self.depth:

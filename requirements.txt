@@ -2,6 +2,8 @@ numpy
 scipy
 torch
 torch-geometric
+torch-sparse
+torch-scatter
 jupyterlab
 requests
 pyparsing

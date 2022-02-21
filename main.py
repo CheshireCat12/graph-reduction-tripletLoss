@@ -10,10 +10,10 @@ from torch_geometric.datasets import TUDataset
 from src.train.trainer import start_training
 from src.graph_converter import start_converting
 
+
 def main(args):
     dataset_ = TUDataset(root=args.folder_data,
                          name=args.dataset)
-
 
     seed_everything(43)
     seeds = np.random.randint(2000, size=args.num_seeds)
@@ -53,7 +53,6 @@ if __name__ == '__main__':
                         type=int, default=False,
                         help='Train GNN with specific seed.')
 
-
     parser.add_argument('--dim-hidden-vec',
                         required=True, type=int,
                         help='Give the dimension of hidden vector dim')
@@ -61,10 +60,12 @@ if __name__ == '__main__':
                         required=True, type=int,
                         help='Give the vector size of the node features of the reduced graphs')
 
-
     parser.add_argument('--depth',
                         required=True, type=int,
                         help='Depth of the model, defines the size of reduced graphs')
+    parser.add_argument('--ratio',
+                        required=True, type=float,
+                        help='Define the reduction ratio per layer, r in (0,1]')
     parser.add_argument('--augment-depth-by-step',
                         action='store_true',
                         help='Defines if the depth is settled once at the beginning or'

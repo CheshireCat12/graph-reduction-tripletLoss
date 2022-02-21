@@ -28,7 +28,7 @@ def reduce_graph(batch: torch_geometric.data.Batch,
     Returns:
         torch_geometric.Data: The reduced graph
     """
-    _, reduced_graph_x, reduced_graph_edge_index, _ = trained_model(batch.x,
+    _, reduced_graph_x, reduced_graph_edge_index = trained_model(batch.x,
                                                                     batch.edge_index,
                                                                     batch.batch)
 

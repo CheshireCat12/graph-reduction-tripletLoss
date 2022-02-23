@@ -15,6 +15,7 @@ from src.models.graph_reduction import GraphReduction
 from src.models.graph_u_net import GraphUNet
 from src.models.graph_u_net_complete import GraphUNet as GraphUNetComplete
 import json
+import re
 
 class InfiniteDataLoader(DataLoader):
     def __init__(self, *args, **kwargs):
@@ -57,13 +58,13 @@ def train(model: torch.nn.Module,
         # preds_centroid, _, _, centroid_embeddings = model(centroids.x,
         #                                                   centroids.edge_index,
         #                                                   centroids.batch)
-        # preds_data, _, _, anchor = model(data.x,
-        #                                  data.edge_index,
-        #                                  data.batch)  # Perform a single forward pass.
+        preds_data, _, _, anchor = model(data.x,
+                                         data.edge_index,
+                                         data.batch)  # Perform a single forward pass.
 
-        predictions, *_ = model(data.x,
-                           data.edge_index,
-                           data.batch)  # Perform a single forward pass.
+        # predictions, *_ = model(data.x,
+        #                    data.edge_index,
+        #                    data.batch)  # Perform a single forward pass.
         # print(centroid_embeddings)
         # print(data.y)
         # print(centroid_embeddings.size())
@@ -75,7 +76,7 @@ def train(model: torch.nn.Module,
         # loss_t = criterion_triplet_loss(anchor, positive, negative)
         # break
         # loss = criterion(out, data.y)  # Compute the loss.
-        loss_e = criterion_cross_entropy(predictions, data.y)
+        loss_e = criterion_cross_entropy(preds_data, data.y)
         alpha = 0.5
         # loss = alpha * loss_t + (1-alpha) * loss_e
         loss = loss_e
@@ -142,7 +143,7 @@ def optimize(model,
         train(model, train_loader, centroids_loader, optimizer, criterion, device, writer, counter)
         train_acc = test(model, train_loader, device)
         val_acc = test(model, val_loader, device)
-        # scheduler.step()
+        scheduler.step()
 
         writer.add_scalar('Accuracy/train', train_acc, epoch)
         writer.add_scalar('Accuracy/val', val_acc, epoch)
@@ -182,7 +183,6 @@ def init_model(args, in_channels, out_channels, depth):
             depth=depth,
             layer=CONV_LAYERS[args.layer]
         )
-
     elif args.name_model == 'UNet_complete':
         return GraphUNetComplete(
             in_channels=in_channels,
@@ -226,6 +226,30 @@ def start_training(args, dataset_, seeds):
     stats = {'parameters': vars(args)}
     
     idx_centroids = np.array([141, 102])
+
+    centroids_cls0 = [
+        "gr_422.graphml",
+        "gr_253.graphml",
+        "gr_583.graphml",
+        "gr_631.graphml",
+        "gr_638.graphml"
+    ]
+
+    centroids_cls1 = [
+        "gr_621.graphml",
+        "gr_328.graphml",
+        "gr_50.graphml",
+        "gr_499.graphml",
+        "gr_84.graphml"
+    ]
+
+    idx_centroids_cls0 = [int(re.search(r'[0-9]+', centroid).group())
+                          for centroid in centroids_cls0]
+    idx_centroids_cls1 = [int(re.search(r'[0-9]+', centroid).group())
+                          for centroid in centroids_cls1]
+
+    idx_centroids = np.array(idx_centroids_cls0 + idx_centroids_cls1)
+
 
     for idx, seed in enumerate(seeds):
         print(f'Train seed: {seed} [{idx+1}/{len(seeds)}]')

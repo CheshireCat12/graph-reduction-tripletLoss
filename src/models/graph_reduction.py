@@ -81,8 +81,9 @@ class GraphReduction(torch.nn.Module):
                                                            )
             xs += readout(x, batch)
 
+        embedding = global_mean_pool(x, batch)
         prediction = F.relu(self.lin1(xs))
         prediction = F.dropout(prediction, p=0.5, training=self.training)
         prediction = self.lin2(prediction)
 
-        return prediction, x, edge_index
+        return prediction, x, edge_index, embedding
